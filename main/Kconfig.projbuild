@@ -8,7 +8,7 @@ config OTA_VERSION_URL
 
 choice CONNECTION_TYPE
     prompt "Connection Type"
-    default CONNECTION_TYPE_MQTT_UDP
+    default CONNECTION_TYPE_WEBSOCKET
     help
         网络数据传输协议
     config CONNECTION_TYPE_MQTT_UDP
@@ -20,7 +20,7 @@ endchoice
 config WEBSOCKET_URL
     depends on CONNECTION_TYPE_WEBSOCKET
     string "Websocket URL"
-    default "wss://api.tenclass.net/xiaozhi/v1/"
+    default "wss://espapi.melontalk.com.cn/xiaozhi/v1/"
     help
         Communication with the server through websocket after wake up.
 
