@@ -12,10 +12,10 @@
 
 extern "C" void app_main(void)
 {
-    // Initialize the default event loop
+    // 初始化默认的事件循环
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
-    // Initialize NVS flash for WiFi configuration
+    // 为WIFI的设置初始化NVS,从NVS中读取WIFI的设置
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
         ESP_LOGW(TAG, "Erasing NVS flash to fix corruption");
@@ -27,7 +27,7 @@ extern "C" void app_main(void)
     // Launch the application
     Application::GetInstance().Start();
 
-    // Dump CPU usage every 10 second
+    // 调试信息，10s 打印一次CPU信息
     while (true) {
         vTaskDelay(10000 / portTICK_PERIOD_MS);
         // SystemInfo::PrintRealTimeStats(pdMS_TO_TICKS(1000));

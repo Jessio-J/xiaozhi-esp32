@@ -64,14 +64,14 @@ void WifiBoard::EnterWifiConfigMode() {
     }
 }
 
-void WifiBoard::StartNetwork() {
-    // User can press BOOT button while starting to enter WiFi configuration mode
+    void WifiBoard::StartNetwork() {
+    // 是否在wifi配网模式
     if (wifi_config_mode_) {
         EnterWifiConfigMode();
         return;
     }
 
-    // If no WiFi SSID is configured, enter WiFi configuration mode
+    // 如果NVS里面没有存储wifi列表，则进入配网模式
     auto& ssid_manager = SsidManager::GetInstance();
     auto ssid_list = ssid_manager.GetSsidList();
     if (ssid_list.empty()) {

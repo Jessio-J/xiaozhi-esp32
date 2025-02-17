@@ -53,7 +53,9 @@ Application::~Application() {
     }
     vEventGroupDelete(event_group_);
 }
-
+/**
+ * 检查是否有新版本
+ */
 void Application::CheckNewVersion() {
     auto& board = Board::GetInstance();
     auto display = board.GetDisplay();
@@ -115,6 +117,9 @@ void Application::CheckNewVersion() {
     }
 }
 
+/**
+ * 播放语音警告信息
+ */
 void Application::Alert(const std::string& title, const std::string& message) {
     ESP_LOGW(TAG, "Alert: %s, %s", title.c_str(), message.c_str());
     auto display = Board::GetInstance().GetDisplay();
@@ -131,6 +136,9 @@ void Application::Alert(const std::string& title, const std::string& message) {
     }
 }
 
+/**
+ * 播放本地文件
+ */
 void Application::PlayLocalFile(const char* data, size_t size) {
     ESP_LOGI(TAG, "PlayLocalFile: %zu bytes", size);
     SetDecodeSampleRate(16000);
@@ -148,7 +156,9 @@ void Application::PlayLocalFile(const char* data, size_t size) {
         audio_decode_queue_.emplace_back(std::move(opus));
     }
 }
-
+/**
+ * 用于开始对话或者打断对话
+ */
 void Application::ToggleChatState() {
     Schedule([this]() {
         if (!protocol_) {
@@ -174,7 +184,9 @@ void Application::ToggleChatState() {
         }
     });
 }
-
+/**
+ * 聆听用户声音，发送给后端处理
+ */
 void Application::StartListening() {
     Schedule([this]() {
         if (!protocol_) {
@@ -204,6 +216,9 @@ void Application::StartListening() {
     });
 }
 
+/**
+ * 侦听到服务端停止说话的标志，结束监听录音
+ */
 void Application::StopListening() {
     Schedule([this]() {
         if (device_state_ == kDeviceStateListening) {
@@ -213,6 +228,9 @@ void Application::StopListening() {
     });
 }
 
+/**
+ * 应用启动主程序
+ */
 void Application::Start() {
     auto& board = Board::GetInstance();
     SetDeviceState(kDeviceStateStarting);
@@ -227,6 +245,9 @@ void Application::Start() {
     opus_encoder_ = std::make_unique<OpusEncoderWrapper>(16000, 1, OPUS_FRAME_DURATION_MS);
     // For ML307 boards, we use complexity 5 to save bandwidth
     // For other boards, we use complexity 3 to save CPU
+    //     根据不同的板子类型设置不同的编码复杂度：
+    // - ML307板子：使用较高复杂度(5)，可以获得更好的压缩率，节省带宽
+    // - WiFi板子：使用较低复杂度(3)，减少CPU占用，因为WiFi板子CPU性能相对较弱
     if (board.GetBoardType() == "ml307") {
         ESP_LOGI(TAG, "ML307 board detected, setting opus encoder complexity to 5");
         opus_encoder_->SetComplexity(5);
@@ -239,18 +260,51 @@ void Application::Start() {
         input_resampler_.Configure(codec->input_sample_rate(), 16000);
         reference_resampler_.Configure(codec->input_sample_rate(), 16000);
     }
+    // 设置输入就绪回调
+    // - 当麦克风采集到新的音频数据时触发
+    // - 在中断上下文中设置事件标志 AUDIO_INPUT_READY_EVENT
+    // - 主循环检测到这个事件后会调用 InputAudio() 处理音频输入
     codec->OnInputReady([this, codec]() {
         BaseType_t higher_priority_task_woken = pdFALSE;
         xEventGroupSetBitsFromISR(event_group_, AUDIO_INPUT_READY_EVENT, &higher_priority_task_woken);
         return higher_priority_task_woken == pdTRUE;
     });
+    // 设置输出就绪回调
+    // - 当音频输出缓冲区有新的数据时触发
+    // - 当扬声器准备好播放新的音频数据时触发
+    // - 设置事件标志 AUDIO_OUTPUT_READY_EVENT
+    // - 主循环检测到这个事件后会调用 OutputAudio() 处理音频输出
     codec->OnOutputReady([this]() {
         BaseType_t higher_priority_task_woken = pdFALSE;
         xEventGroupSetBitsFromISR(event_group_, AUDIO_OUTPUT_READY_EVENT, &higher_priority_task_woken);
         return higher_priority_task_woken == pdTRUE;
     });
     codec->Start();
-
+    // 1. 第一个参数：任务函数
+    
+    //    - 使用 lambda 表达式定义
+    //    - 接收一个 void* 参数，转换为 Application* 类型
+    //    - 调用 MainLoop() 函数
+    //    - 任务完成后自我删除（vTaskDelete）
+    // 2. "main_loop" ：任务的名称，用于调试和监控
+    // 3. 4096 * 2 ：任务堆栈大小
+    
+    //    - 单位是字节
+    //    - 这里分配了 8KB 的堆栈空间
+    // 4. this ：传递给任务函数的参数
+    
+    //    - 将当前 Application 实例的指针传递给任务
+    //    - 在任务函数中通过 arg 参数接收
+    // 5. 2 ：任务优先级
+    
+    //    - 范围通常是 0-24
+    //    - 数字越大优先级越高
+    //    - 2 是较低的优先级，适合后台任务
+    // 6. nullptr ：任务句柄
+    
+    //    - 可以用来在其他地方引用这个任务
+    //    - 这里不需要引用，所以传 nullptr
+    // 这个任务用于运行应用程序的主循环（MainLoop），处理音频输入输出和其他事件。
     /* Start the main loop */
     xTaskCreate([](void* arg) {
         Application* app = (Application*)arg;
@@ -357,7 +411,7 @@ void Application::Start() {
         }
     });
 
-    // Check for new firmware version or get the MQTT broker address
+    // 一次性任务，开机后异步任务检测更新
     xTaskCreate([](void* arg) {
         Application* app = (Application*)arg;
         app->CheckNewVersion();
@@ -437,9 +491,9 @@ void Application::Schedule(std::function<void()> callback) {
     xEventGroupSetBits(event_group_, SCHEDULE_EVENT);
 }
 
-// The Main Loop controls the chat state and websocket connection
-// If other tasks need to access the websocket or chat state,
-// they should use Schedule to call this function
+// 主循环控制聊天状态和websocket连接
+// 如果其他任务需要访问websocket或聊天状态，
+// 应该使用Schedule来调用此函数
 void Application::MainLoop() {
     while (true) {
         auto bits = xEventGroupWaitBits(event_group_,
@@ -462,7 +516,17 @@ void Application::MainLoop() {
         }
     }
 }
+// 具体功能：
 
+// 1. 使用互斥锁保护共享资源
+// 2. 重置 Opus 解码器状态
+// 3. 清空音频解码队列
+// 4. 更新最后输出时间
+// 5. 启用音频输出
+// 这个函数的主要目的是在切换设备状态时，确保音频系统处于一个干净的初始状态，避免之前的音频数据影响新的状态。例如：
+
+// - 从说话状态切换到聆听状态时，需要清除之前未播放完的音频数据
+// - 开始新的对话时，需要确保解码器状态是干净的
 void Application::ResetDecoder() {
     std::lock_guard<std::mutex> lock(mutex_);
     opus_decoder_->ResetState();
@@ -470,7 +534,7 @@ void Application::ResetDecoder() {
     last_output_time_ = std::chrono::steady_clock::now();
     Board::GetInstance().GetAudioCodec()->EnableOutput(true);
 }
-
+// 处理音频输出
 void Application::OutputAudio() {
     auto now = std::chrono::steady_clock::now();
     auto codec = Board::GetInstance().GetAudioCodec();
@@ -478,7 +542,7 @@ void Application::OutputAudio() {
 
     std::unique_lock<std::mutex> lock(mutex_);
     if (audio_decode_queue_.empty()) {
-        // Disable the output if there is no audio data for a long time
+        // 如果队列为空且设备空闲超过10秒，关闭音频输出
         if (device_state_ == kDeviceStateIdle) {
             auto duration = std::chrono::duration_cast<std::chrono::seconds>(now - last_output_time_).count();
             if (duration > max_silence_seconds) {
@@ -487,46 +551,48 @@ void Application::OutputAudio() {
         }
         return;
     }
-
+    // 如果设备处于聆听状态，清空队列
     if (device_state_ == kDeviceStateListening) {
         audio_decode_queue_.clear();
         return;
     }
-
+    // 从队列中取出第一个 Opus 数据块
     last_output_time_ = now;
     auto opus = std::move(audio_decode_queue_.front());
     audio_decode_queue_.pop_front();
     lock.unlock();
-
+    // 在后台任务中解码 Opus 数据块
     background_task_->Schedule([this, codec, opus = std::move(opus)]() mutable {
+        // 1. 检查是否被中止
         if (aborted_) {
             return;
         }
-
+        // 2. Opus 解码为 PCM
         std::vector<int16_t> pcm;
         if (!opus_decoder_->Decode(std::move(opus), pcm)) {
             return;
         }
 
-        // Resample if the sample rate is different
+        // 3. 如果需要，进行采样率转换
         if (opus_decode_sample_rate_ != codec->output_sample_rate()) {
             int target_size = output_resampler_.GetOutputSamples(pcm.size());
             std::vector<int16_t> resampled(target_size);
             output_resampler_.Process(pcm.data(), pcm.size(), resampled.data());
             pcm = std::move(resampled);
         }
-        
+         // 4. 输出到音频设备
         codec->OutputData(pcm);
     });
 }
-
+// 处理音频输入
 void Application::InputAudio() {
     auto codec = Board::GetInstance().GetAudioCodec();
     std::vector<int16_t> data;
+    // 从音频设备获取输入数据
     if (!codec->InputData(data)) {
         return;
     }
-
+    // 如果需要，进行采样率转换
     if (codec->input_sample_rate() != 16000) {
         if (codec->input_channels() == 2) {
             auto mic_channel = std::vector<int16_t>(data.size() / 2);
@@ -550,9 +616,10 @@ void Application::InputAudio() {
             data = std::move(resampled);
         }
     }
-    
+
 #if CONFIG_USE_AUDIO_PROCESSING
     if (audio_processor_.IsRunning()) {
+        // 语音处理器处理
         audio_processor_.Input(data);
     }
     if (wake_word_detect_.IsDetectionRunning()) {
@@ -563,6 +630,7 @@ void Application::InputAudio() {
         background_task_->Schedule([this, data = std::move(data)]() mutable {
             opus_encoder_->Encode(std::move(data), [this](std::vector<uint8_t>&& opus) {
                 Schedule([this, opus = std::move(opus)]() {
+                    // 发送音频数据
                     protocol_->SendAudio(opus);
                 });
             });
@@ -570,13 +638,13 @@ void Application::InputAudio() {
     }
 #endif
 }
-
+// 中止说话
 void Application::AbortSpeaking(AbortReason reason) {
     ESP_LOGI(TAG, "Abort speaking");
     aborted_ = true;
     protocol_->SendAbortSpeaking(reason);
 }
-
+// 设置设备状态
 void Application::SetDeviceState(DeviceState state) {
     if (device_state_ == state) {
         return;
@@ -624,7 +692,7 @@ void Application::SetDeviceState(DeviceState state) {
             break;
     }
 }
-
+// 设置解码器采样率
 void Application::SetDecodeSampleRate(int sample_rate) {
     if (opus_decode_sample_rate_ == sample_rate) {
         return;
@@ -640,7 +708,7 @@ void Application::SetDecodeSampleRate(int sample_rate) {
         output_resampler_.Configure(opus_decode_sample_rate_, codec->output_sample_rate());
     }
 }
-
+// 更新物联网状态
 void Application::UpdateIotStates() {
     auto& thing_manager = iot::ThingManager::GetInstance();
     auto states = thing_manager.GetStatesJson();
