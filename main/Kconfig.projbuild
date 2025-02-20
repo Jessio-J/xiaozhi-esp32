@@ -129,3 +129,14 @@ config USE_AUDIO_PROCESSING
     help
         需要 ESP32 S3 与 AFE 支持
 endmenu
+
+menu "WiFi Configuration"
+
+    config SET_MAC_ADDRESS_OF_TARGET_AP
+        bool "Set MAC Address of Target AP"
+        default n
+        help
+            Enable this option to set the MAC address of target AP.
+            This can help ensure connecting to a specific AP when multiple APs have the same SSID.
+
+endmenu

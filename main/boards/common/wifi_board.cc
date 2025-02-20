@@ -17,8 +17,8 @@
 #include <esp_log.h>
 
 #include <wifi_station.h>
-#include <wifi_configuration_ap.h>
 #include <ssid_manager.h>
+#include "smartconfig.h"
 
 static const char *TAG = "WifiBoard";
 
@@ -40,17 +40,20 @@ void WifiBoard::EnterWifiConfigMode() {
     auto display = Board::GetInstance().GetDisplay();
     application.SetDeviceState(kDeviceStateWifiConfiguring);
 
-    auto& wifi_ap = WifiConfigurationAp::GetInstance();
-    wifi_ap.SetSsidPrefix("Melontalk");
-    wifi_ap.Start();
+    auto& smart_config = SmartConfig::GetInstance();
+    smart_config.OnConnected([this]() {
+        auto display = Board::GetInstance().GetDisplay();
+        display->ShowNotification("WiFi连接成功");
+    });
+    smart_config.OnConfigDone([this]() {
+        auto display = Board::GetInstance().GetDisplay();
+        display->ShowNotification("配网完成，设备即将重启...");
+        vTaskDelay(pdMS_TO_TICKS(2000));
+        esp_restart();
+    });
+    smart_config.Start();
 
-    // 显示 WiFi 配置 AP 的 SSID 和 Web 服务器 URL
-    std::string hint = "请在手机上连接热点 ";
-    hint += wifi_ap.GetSsid();
-    hint += "，然后打开浏览器访问 ";
-    hint += wifi_ap.GetWebServerUrl();
-
-    display->SetStatus(hint);
+    display->SetStatus("请使用EspTouch手机APP进行配网");
     
     // 播报配置 WiFi 的提示
     application.Alert("Info", "进入配网模式");
