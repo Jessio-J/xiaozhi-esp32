@@ -3,6 +3,7 @@
 
 #include <functional>
 #include "esp_event.h"
+#include <string>
 #include "freertos/event_groups.h"
 
 // 事件标志位定义
@@ -44,6 +45,8 @@ private:
     bool is_running_ = false;
     std::function<void()> on_connected_ = nullptr;
     std::function<void()> on_config_done_ = nullptr;
+    std::string ssid_;
+    std::string password_;
 };
 
 #endif // _SMARTCONFIG_H_

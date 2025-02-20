@@ -70,8 +70,7 @@ void WifiStation::OnConnected(std::function<void(const std::string& ssid)> on_co
 }
 
 void WifiStation::Start() {
-    // Initialize the TCP/IP stack
-    ESP_ERROR_CHECK(esp_netif_init());
+    
 
     ESP_ERROR_CHECK(esp_event_handler_instance_register(WIFI_EVENT,
                                                         ESP_EVENT_ANY_ID,

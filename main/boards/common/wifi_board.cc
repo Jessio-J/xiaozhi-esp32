@@ -19,6 +19,7 @@
 #include <wifi_station.h>
 #include <ssid_manager.h>
 #include "smartconfig.h"
+#include <esp_netif.h>
 
 static const char *TAG = "WifiBoard";
 
@@ -68,6 +69,8 @@ void WifiBoard::EnterWifiConfigMode() {
 }
 
     void WifiBoard::StartNetwork() {
+    // Initialize the TCP/IP stack
+    ESP_ERROR_CHECK(esp_netif_init());
     // 是否在wifi配网模式
     if (wifi_config_mode_) {
         EnterWifiConfigMode();

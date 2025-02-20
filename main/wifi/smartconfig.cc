@@ -13,7 +13,7 @@
 #include "esp_netif.h"
 #include "esp_smartconfig.h"
 #include "esp_mac.h"
-
+#include "ssid_manager.h"
 static const char *TAG = "smartconfig";
 
 SmartConfig& SmartConfig::GetInstance() {
@@ -91,9 +91,11 @@ void SmartConfig::EventHandler(void* arg, esp_event_base_t event_base,
         }
 #endif
 
-        // 复制SSID和密码到本地变量
+        // 复制SSID和密码到本地变量和成员变量
         memcpy(ssid, evt->ssid, sizeof(evt->ssid));
         memcpy(password, evt->password, sizeof(evt->password));
+        this_->ssid_ = std::string((char*)ssid);
+        this_->password_ = std::string((char*)password);
         ESP_LOGI(TAG, "SSID:%s", ssid);
         ESP_LOGI(TAG, "PASSWORD:%s", password);
 
@@ -133,18 +135,11 @@ void SmartConfig::EventHandler(void* arg, esp_event_base_t event_base,
  */
 void SmartConfig::Start()
 {
-    // 初始化底层TCP/IP堆栈
-    ESP_ERROR_CHECK(esp_netif_init());
-    
     // 创建WiFi事件组，用于同步WiFi操作
     if (is_running_) {
         return;
     }
     is_running_ = true;
-    
-    // 创建默认事件循环
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
-    
     // 创建默认WiFi站点网络接口
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);
@@ -203,6 +198,9 @@ void SmartConfig::StartSmartConfigTask()
                 if (this_->on_connected_) {
                     this_->on_connected_();
                 }
+                // 调用ssid_manager 保存ssid和password
+                auto& ssid_manager = SsidManager::GetInstance();
+                ssid_manager.AddSsid(this_->ssid_, this_->password_);
             }
             
             // 检查配网完成状态
