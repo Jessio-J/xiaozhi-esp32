@@ -9,8 +9,6 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "led/circular_strip.cc"
             "display/display.cc"
             "display/no_display.cc"
-            "display/lcd_display.cc"
-            "display/ssd1306_display.cc"
             "protocols/protocol.cc"
             "protocols/mqtt_protocol.cc"
             "protocols/websocket_protocol.cc"
@@ -22,7 +20,6 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "settings.cc"
             "background_task.cc"
             "main.cc"
-            "wifi/dns_server.cc"
             "wifi/ssid_manager.cc"
             "wifi/smartconfig.cc"
             "wifi/wifi_station.cc"
@@ -42,14 +39,19 @@ list(APPEND INCLUDE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/boards/common)
 # 根据 BOARD_TYPE 配置添加对应的板级文件
 if(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI)
     set(BOARD_TYPE "bread-compact-wifi")
+    list(APPEND SOURCES "display/ssd1306_display.cc")
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_ML307)
     set(BOARD_TYPE "bread-compact-ml307")
+    list(APPEND SOURCES "display/ssd1306_display.cc")
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_ESP32)
-    set(BOARD_TYPE "bread-compact-esp32")    
+    set(BOARD_TYPE "bread-compact-esp32")
+    list(APPEND SOURCES "display/ssd1306_display.cc")
 elseif(CONFIG_BOARD_TYPE_BREAD_COMPACT_WIFI_LCD)
-    set(BOARD_TYPE "bread-compact-wifi-lcd") 
+    set(BOARD_TYPE "bread-compact-wifi-lcd")
+    list(APPEND SOURCES "display/lcd_display.cc")
 elseif(CONFIG_BOARD_TYPE_XMINI_C3)
-    set(BOARD_TYPE "xmini-c3")  
+    set(BOARD_TYPE "xmini-c3")
+    list(APPEND SOURCES "display/ssd1306_display.cc")
 endif()
 file(GLOB BOARD_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}/*.cc)
 list(APPEND SOURCES ${BOARD_SOURCES})
