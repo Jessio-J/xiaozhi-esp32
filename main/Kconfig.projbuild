@@ -1,4 +1,4 @@
-menu "Xiaozhi Assistant"
+menu "Melontalk Assistant"
 
 config OTA_VERSION_URL
     string "OTA Version URL"
