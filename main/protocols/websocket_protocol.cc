@@ -61,7 +61,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
     websocket_->SetHeader("Authorization", token.c_str());
     websocket_->SetHeader("Protocol-Version", "1");
     websocket_->SetHeader("Device-Id", SystemInfo::GetMacAddress().c_str());
-
+    websocket_->SetHeader("Device-Role", GetDeviceRoleName());
     websocket_->OnData([this](const char* data, size_t len, bool binary) {
         if (binary) {
             if (on_incoming_audio_ != nullptr) {
@@ -145,6 +145,18 @@ void WebsocketProtocol::ParseServerHello(const cJSON* root) {
     }
 
     xEventGroupSetBits(event_group_handle_, WEBSOCKET_PROTOCOL_SERVER_HELLO_EVENT);
+}
+
+const char* WebsocketProtocol::GetDeviceRoleName() {
+#ifdef CONFIG_DEVICE_ROLE_TAIWANESE_GIRLFRIEND
+    return "TAIWANESE_GIRLFRIEND";
+#elif CONFIG_DEVICE_ROLE_ENGLISH_TEACHER
+    return "ENGLISH_TEACHER";
+#elif CONFIG_DEVICE_ROLE_STORYTELLER
+    return "STORYTELLER";
+#else
+    return "TAIWANESE_GIRLFRIEND";
+#endif
 }
 
 #endif

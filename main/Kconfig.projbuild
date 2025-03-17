@@ -31,6 +31,19 @@ config WEBSOCKET_ACCESS_TOKEN
     help
         Access token for websocket communication.
 
+choice DEVICE_ROLE
+    prompt "Device Role"
+    default DEVICE_ROLE_TAIWANESE_GIRLFRIEND
+    help
+        设备角色选择，决定设备的对话风格和行为模式
+    config DEVICE_ROLE_TAIWANESE_GIRLFRIEND
+        bool "台湾女友"
+    config DEVICE_ROLE_ENGLISH_TEACHER
+        bool "英语老师"
+    config DEVICE_ROLE_STORYTELLER
+        bool "童话故事大王"
+endchoice
+
 choice BOARD_TYPE
     prompt "Board Type"
     default BOARD_TYPE_BREAD_COMPACT_WIFI

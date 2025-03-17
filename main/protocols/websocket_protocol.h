@@ -26,6 +26,7 @@ private:
 
     void ParseServerHello(const cJSON* root);
     void SendText(const std::string& text) override;
+    static const char* GetDeviceRoleName();  // 添加这行
 };
 
 #endif
