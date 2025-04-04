@@ -57,6 +57,8 @@ choice BOARD_TYPE
         bool "面包板新版接线（ML307 AT）"
     config BOARD_TYPE_XMINI_C3
         bool "虾哥 Mini C3"   
+    config BOARD_TYPE_MELONTALK_MAGICBOX
+        bool "Melontalk AI 魔盒"   
 endchoice
 
 choice DISPLAY_LCD_TYPE
