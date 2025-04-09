@@ -44,12 +44,14 @@ void WifiBoard::EnterWifiConfigMode() {
     std::string hint = Lang::Strings::ENTERING_WIFI_CONFIG_MODE;
     auto& smart_config = SmartConfig::GetInstance();
     smart_config.OnConnected([this]() {
-        auto display = Board::GetInstance().GetDisplay();
-        application.Alert(Lang::Strings::WIFI_CONFIG_MODE, Lang::Strings::CONNECTED_TO.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
+        // auto display = Board::GetInstance().GetDisplay();
+        // display->SetStatus(Lang::Strings::CONNECTED_TO);
+        // auto& application = Application::GetInstance();
+        // application.Alert(Lang::Strings::WIFI_CONFIG_MODE, Lang::Strings::CONNECTED_TO.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
     });
     smart_config.OnConfigDone([this]() {
         auto display = Board::GetInstance().GetDisplay();
-        application.Alert(Lang::Strings::WIFI_CONFIG_MODE,  Lang::Strings::CONNECTED_TO.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
+        display->SetStatus(Lang::Strings::CONNECTED_TO);
         vTaskDelay(pdMS_TO_TICKS(2000));
         esp_restart();
     });
