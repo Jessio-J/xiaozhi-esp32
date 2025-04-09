@@ -1,4 +1,4 @@
-menu "Xiaozhi Assistant"
+menu "Melontalk Ai Box"
 
 config OTA_VERSION_URL
     string "OTA Version URL"
@@ -26,7 +26,7 @@ endchoice
 
 choice CONNECTION_TYPE
     prompt "Connection Type"
-    default CONNECTION_TYPE_MQTT_UDP
+    default CONNECTION_TYPE_WEBSOCKET
     help
         网络数据传输协议
     config CONNECTION_TYPE_MQTT_UDP
@@ -38,7 +38,7 @@ endchoice
 config WEBSOCKET_URL
     depends on CONNECTION_TYPE_WEBSOCKET
     string "Websocket URL"
-    default "wss://api.tenclass.net/xiaozhi/v1/"
+    default "wss://espapi.melontalk.com.cn/xiaozhi/v1/"
     help
         Communication with the server through websocket after wake up.
 
@@ -48,6 +48,20 @@ config WEBSOCKET_ACCESS_TOKEN
     default "test-token"
     help
         Access token for websocket communication.
+
+choice DEVICE_ROLE
+    prompt "Device Role"
+    default DEVICE_ROLE_TAIWANESE_GIRLFRIEND
+    help
+        设备角色选择，决定设备的对话风格和行为模式
+    config DEVICE_ROLE_TAIWANESE_GIRLFRIEND
+        bool "台湾女友"
+    config DEVICE_ROLE_ENGLISH_TEACHER
+        bool "英语老师"
+    config DEVICE_ROLE_STORYTELLER
+        bool "童话故事大王"
+endchoice
+
 
 choice BOARD_TYPE
     prompt "Board Type"

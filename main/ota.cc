@@ -148,6 +148,8 @@ bool Ota::CheckVersion() {
 
     // Check if the version is newer, for example, 0.1.0 is newer than 0.0.1
     has_new_version_ = IsNewVersionAvailable(current_version_, firmware_version_);
+    // 暂时不考虑升级的事情
+    has_new_version_ = false;
     if (has_new_version_) {
         ESP_LOGI(TAG, "New version available: %s", firmware_version_.c_str());
     } else {
