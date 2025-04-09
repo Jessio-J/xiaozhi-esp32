@@ -138,20 +138,20 @@ void Application::CheckNewVersion() {
         std::string message = std::string(Lang::Strings::VERSION) + ota_.GetCurrentVersion();
         display->ShowNotification(message.c_str());
     
-        if (ota_.HasActivationCode()) {
-            // Activation code is valid
-            SetDeviceState(kDeviceStateActivating);
-            ShowActivationCode();
+        // if (ota_.HasActivationCode()) {
+        //     // Activation code is valid
+        //     SetDeviceState(kDeviceStateActivating);
+        //     ShowActivationCode();
 
-            // Check again in 60 seconds or until the device is idle
-            for (int i = 0; i < 60; ++i) {
-                if (device_state_ == kDeviceStateIdle) {
-                    break;
-                }
-                vTaskDelay(pdMS_TO_TICKS(1000));
-            }
-            continue;
-        }
+        //     // Check again in 60 seconds or until the device is idle
+        //     for (int i = 0; i < 60; ++i) {
+        //         if (device_state_ == kDeviceStateIdle) {
+        //             break;
+        //         }
+        //         vTaskDelay(pdMS_TO_TICKS(1000));
+        //     }
+        //     continue;
+        // }
 
         SetDeviceState(kDeviceStateIdle);
         display->SetChatMessage("system", "");
