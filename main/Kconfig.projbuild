@@ -1,4 +1,4 @@
-menu "Melontalk Ai Box"
+menu "Tongtu Ai Box"
 
 config OTA_VERSION_URL
     string "OTA Version URL"
@@ -38,7 +38,7 @@ endchoice
 config WEBSOCKET_URL
     depends on CONNECTION_TYPE_WEBSOCKET
     string "Websocket URL"
-    default "wss://espapi.melontalk.com.cn/xiaozhi/v1/"
+    default "wss://espapi.samewayai.com/xiaozhi/v1/"
     help
         Communication with the server through websocket after wake up.
 
@@ -65,11 +65,13 @@ endchoice
 
 choice BOARD_TYPE
     prompt "Board Type"
-    default BOARD_TYPE_MELONTALK_MAGICBOX
+    default BOARD_TYPE_TT_MAGICBOX
     help
         Board type. 开发板类型
     config BOARD_TYPE_MELONTALK_MAGICBOX
         bool "Melontalk AI 魔盒"
+    config BOARD_TYPE_TT_MAGICBOX
+        bool "同途AI 魔盒"
     config BOARD_TYPE_BREAD_COMPACT_WIFI
         bool "面包板新版接线（WiFi）"
     config BOARD_TYPE_BREAD_COMPACT_WIFI_LCD
