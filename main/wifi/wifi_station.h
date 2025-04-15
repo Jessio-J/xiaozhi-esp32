@@ -49,6 +49,7 @@ private:
     std::string password_;
     std::string ip_address_;
     int reconnect_count_ = 0;
+    int64_t disconnect_start_time_ = 0;
     std::function<void(const std::string& ssid)> on_connect_;
     std::function<void(const std::string& ssid)> on_connected_;
     std::function<void()> on_scan_begin_;

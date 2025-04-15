@@ -1,7 +1,7 @@
 #include "wifi_station.h"
 #include <cstring>
 #include <algorithm>
-
+#include "settings.h"
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <esp_log.h>
@@ -83,8 +83,6 @@ void WifiStation::Start() {
                                                         this,
                                                         &instance_got_ip_));
 
-    // Create the default event loop
-    esp_netif_create_default_wifi_sta();
 
     // Initialize the WiFi stack in station mode
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -209,6 +207,21 @@ void WifiStation::WifiEventHandler(void* arg, esp_event_base_t event_base, int32
             this_->on_scan_begin_();
         }
     } else if (event_id == WIFI_EVENT_SCAN_DONE) {
+         // 记录断开连接的开始时间
+         if (this_->disconnect_start_time_ == 0) {
+            this_->disconnect_start_time_ = esp_timer_get_time();
+        }
+        
+        // 检查是否已经断开连接超过45秒
+        int64_t disconnect_duration = (esp_timer_get_time() - this_->disconnect_start_time_) ; // 转换为秒
+        ESP_LOGI(TAG, "WiFi disconnected for %lld seconds", disconnect_duration);
+        
+        if ((esp_timer_get_time() - this_->disconnect_start_time_) > 70*1000*1000) { // 45秒 = 45000000微秒
+            ESP_LOGI(TAG, "WiFi disconnected for more than 70s, restarting...");
+            Settings settings("wifi", true);
+            settings.SetInt("force_ap", 1);
+            esp_restart();
+        }
         this_->HandleScanResult();
     } else if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
         xEventGroupClearBits(this_->event_group_, WIFI_EVENT_CONNECTED);
@@ -226,7 +239,10 @@ void WifiStation::WifiEventHandler(void* arg, esp_event_base_t event_base, int32
         
         ESP_LOGI(TAG, "No more AP to connect, wait for next scan");
         esp_timer_start_once(this_->timer_handle_, 10 * 1000);
+
     } else if (event_id == WIFI_EVENT_STA_CONNECTED) {
+        // 重置断开连接时间戳
+        this_->disconnect_start_time_ = 0;
     }
 }
 

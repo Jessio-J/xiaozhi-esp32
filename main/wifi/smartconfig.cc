@@ -140,9 +140,6 @@ void SmartConfig::Start()
         return;
     }
     is_running_ = true;
-    // 创建默认WiFi站点网络接口
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
-    assert(sta_netif);
 
     // 使用默认配置初始化WiFi
     wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
@@ -185,12 +182,21 @@ void SmartConfig::StartSmartConfigTask()
         // 启动智能配网
         ESP_ERROR_CHECK( esp_smartconfig_start(&cfg) );
         
+        // 记录开始时间
+        TickType_t start_time = xTaskGetTickCount();
+        
         // 进入无限循环，等待配网结果
         while (this_->is_running_) {
-            // 等待WiFi连接成功或配网完成事件
+            // 等待WiFi连接成功或配网完成事件，设置超时时间为1秒
             EventBits_t uxBits = xEventGroupWaitBits(this_->event_group_, 
                                                     CONNECTED_BIT | ESPTOUCH_DONE_BIT, 
-                                                    true, false, portMAX_DELAY);
+                                                    true, false, pdMS_TO_TICKS(1000));
+            
+            // 检查是否超时（45秒）
+            if (((xTaskGetTickCount() - start_time) * portTICK_PERIOD_MS) > 45000) {
+                ESP_LOGI(TAG, "SmartConfig timeout, restarting...");
+                esp_restart();
+            }
         
             // 检查WiFi连接状态
             if(uxBits & CONNECTED_BIT) {

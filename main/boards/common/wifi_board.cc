@@ -22,6 +22,7 @@
 #include <ssid_manager.h>
 #include <esp_netif.h>
 #include "smartconfig.h"
+#include <esp_wifi.h>
 static const char *TAG = "WifiBoard";
 
 WifiBoard::WifiBoard() {
@@ -38,6 +39,7 @@ std::string WifiBoard::GetBoardType() {
 }
 
 void WifiBoard::EnterWifiConfigMode() {
+    ESP_LOGI(TAG, "NOW ENTER WIFI CONFIG MODE!!!!");
     auto& application = Application::GetInstance();
     application.SetDeviceState(kDeviceStateWifiConfiguring);
     // 显示 WiFi 配置 AP 的 SSID 和 Web 服务器 URL
@@ -73,6 +75,9 @@ void WifiBoard::StartNetwork() {
     // User can press BOOT button while starting to enter WiFi configuration mode
     // Initialize the TCP/IP stack
     ESP_ERROR_CHECK(esp_netif_init());
+    // 创建默认WiFi站点网络接口
+    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
+    assert(sta_netif);
     if (wifi_config_mode_) {
         EnterWifiConfigMode();
         return;
