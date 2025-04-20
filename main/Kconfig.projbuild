@@ -38,7 +38,7 @@ endchoice
 config WEBSOCKET_URL
     depends on CONNECTION_TYPE_WEBSOCKET
     string "Websocket URL"
-    default "wss://espapi.samewayai.com/xiaozhi/v1/"
+    default "wss://esp.samewayai.com/xiaozhi/v1/"
     help
         Communication with the server through websocket after wake up.
 
