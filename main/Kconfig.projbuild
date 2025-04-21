@@ -65,13 +65,11 @@ endchoice
 
 choice BOARD_TYPE
     prompt "Board Type"
-    default BOARD_TYPE_TT_MAGICBOX
+    default BOARD_TYPE_XMINI_C3
     help
         Board type. 开发板类型
     config BOARD_TYPE_MELONTALK_MAGICBOX
         bool "Melontalk AI 魔盒"
-    config BOARD_TYPE_TT_MAGICBOX
-        bool "同途AI 魔盒"
     config BOARD_TYPE_BREAD_COMPACT_WIFI
         bool "面包板新版接线（WiFi）"
     config BOARD_TYPE_BREAD_COMPACT_WIFI_LCD
