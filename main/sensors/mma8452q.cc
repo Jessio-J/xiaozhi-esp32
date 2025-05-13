@@ -28,13 +28,18 @@
 #define INT_SRC_LNDPRT      0x10  // 方向变化中断
 #define INT_SRC_TRANS       0x20  // 转置中断
 #define INT_SRC_ASLP        0x80  // 自动休眠中断
+// 添加缺失的寄存器地址定义
+#define MMA845X_REG_FF_MT_CFG    0x15  // 自由落体/运动检测配置寄存器
+#define MMA845X_REG_FF_MT_THS    0x17  // 自由落体/运动检测阈值寄存器
+#define MMA845X_REG_FF_MT_COUNT  0x18  // 自由落体/运动检测去抖动计数器
+#define REG_OUT_FF_MT_SRC 0x16 // 自由落体/运动检测源寄存器
 
 // 设备ID
 #define MMA8452Q_ID         0x2A  // WHO_AM_I寄存器的值
 
 MMA8452Q::MMA8452Q(i2c_master_bus_handle_t i2c_bus, gpio_num_t int1_pin)
     : I2cDevice(i2c_bus, I2C_ADDR), int1_pin_(int1_pin),
-      shake_callback_(nullptr), update_task_handle_(nullptr) {
+      shake_callback_(nullptr), update_task_handle_(nullptr), gpio_evt_queue(nullptr) {
 }
 
 MMA8452Q::~MMA8452Q() {
@@ -63,29 +68,10 @@ bool MMA8452Q::Initialize() {
         ESP_LOGE(TAG, "Wrong device ID: expected 0x%02x, got 0x%02x", MMA8452Q_ID, who_am_i);
         return false;
     }
-    
-    // 进入待机模式以配置传感器
-    WriteReg(REG_CTRL_REG1, 0x00);  // 清除激活位，进入待机模式
-    
-    // 配置数据格式 - 设置为±2g范围
-    WriteReg(REG_XYZ_DATA_CFG, 0x00);  // 00 = ±2g, 01 = ±4g, 10 = ±8g
-    
-    // 配置中断 - 使用INT1引脚进行震动检测
-    WriteReg(REG_CTRL_REG4, 0x04);  // 启用自由落体/运动检测中断
-    WriteReg(REG_CTRL_REG5, 0x04);  // 将自由落体/运动检测中断路由到INT1引脚
-    
-    // 配置控制寄存器2 - 高通滤波用于运动检测
-    WriteReg(REG_CTRL_REG2, 0x10);  // 启用高通滤波用于运动检测
-    
-    // 配置控制寄存器3 - 中断引脚配置
-    WriteReg(REG_CTRL_REG3, 0x02);  // 中断引脚为开漏输出，活动低电平
-    
-    // 配置控制寄存器1 - 设置数据速率和激活传感器
-    WriteReg(REG_CTRL_REG1, 0x01 | (0x03 << 3));  // 激活传感器，ODR=800Hz，低噪声模式关闭
-    
+     
     // 配置GPIO中断引脚
     if (int1_pin_ != GPIO_NUM_NC) {
-      
+        gpio_evt_queue = xQueueCreate(10, sizeof(uint8_t));
         
         // 安装GPIO ISR服务
         ESP_ERROR_CHECK(gpio_install_isr_service(0));
@@ -103,8 +89,59 @@ bool MMA8452Q::Initialize() {
         ESP_LOGI(TAG, "Interrupt configured on GPIO %d", int1_pin_);
     }
     
+    // 进入待机模式以配置传感器
+    WriteReg(REG_CTRL_REG1, 0x00);  // 清除激活位，进入待机模式
+    
+    // 配置数据格式 - 设置为±2g范围
+    WriteReg(REG_XYZ_DATA_CFG, 0x00);  // 00 = ±2g, 01 = ±4g, 10 = ±8g
+
+    // 配置事件
+    // struct mma845x_reg_ff_mt_cfg
+    // {
+    //     uint8_t unused:3; // FF_MT_CFG<2:0> unused
+    //     uint8_t XEFE  :1; // FF_MT_CFG<3>   Event flag enable on X event
+    //     uint8_t YEFE  :1; // FF_MT_CFG<4>   Event flag enable on Y event
+    //     uint8_t ZEFE  :1; // FF_MT_CFG<5>   Event flag enable on Z event
+    //     uint8_t OAE   :1; // FF_MT_CFG<6>   Motion detect / freefall detect selection
+    //     uint8_t ELE   :1; // FF_MT_CFG<6>   Event latch enable
+    // };
+    WriteReg(MMA845X_REG_FF_MT_CFG, 0xD8);
+    // struct mma845x_reg_ff_mt_ths
+    // {
+    //     uint8_t THS   :7; // FF_MT_CFG<6:0> Freefall/motion threshold
+    //     uint8_t DBCNTM:1; // FF_MT_CFG<7>   Debounce counter mode selection
+    // };
+    WriteReg(MMA845X_REG_FF_MT_THS, 0x10);
+    // event_config.debounce_cnt = 5; // 100 ms at ODR=50Hz in normal oversampling mode
+    WriteReg(MMA845X_REG_FF_MT_COUNT, 0x05);
+    // struct mma845x_reg_ctrl3
+    // {
+    //     uint8_t PP_OD      :1; // CTRL3<0>   Push-pull/open drain interrupt pad
+    //     uint8_t IPOL       :1; // CTRL3<1>   Interrupt polarity
+    //     uint8_t unused     :1; // CTRL3<2>   unused
+    //     uint8_t WAKE_FF_MT :1; // CTRL3<3>   Freefall/motion function wake up
+    //     uint8_t WAKE_PULSE :1; // CTRL3<4>   Pulse function wake up
+    //     uint8_t WAKE_LNDPRT:1; // CTRL3<5>   Orientatoin function wake up
+    //     uint8_t WAKE_TRANS :1; // CTRL3<6>   Transient function wake up
+    //     uint8_t FIFO_GATE  :1; // CTRL3<7>   FIFO gate handling in state transition
+
+    // };
+    WriteReg(REG_CTRL_REG3, 0x08);
+    // 配置中断 - 使用INT1引脚进行震动检测
+    WriteReg(REG_CTRL_REG4, 0x04);  // 启用自由落体/运动检测中断
+    WriteReg(REG_CTRL_REG5, 0x04);  // 将自由落体/运动检测中断路由到INT1引脚
+    
+    // 配置控制寄存器2 - 高通滤波用于运动检测
+    WriteReg(REG_CTRL_REG2, 0x10);  // 启用高通滤波用于运动检测
+    
+    // 配置控制寄存器1 - 设置数据速率和激活传感器
+    WriteReg(REG_CTRL_REG1, 0x01 | (0x03 << 3));  // 激活传感器，ODR=800Hz，低噪声模式关闭
+    
+   
     // 创建更新任务
-    xTaskCreate(UpdateTask, "mma8452q_task", 4096, this, 3, &update_task_handle_);
+    // xTaskCreate(UpdateTask, "mma8452q_task", 4096, this, 3, &update_task_handle_);
+
+     xTaskCreate(user_task_interrupt, "user_task_interrupt", 4096, this, 2, NULL);
     
     ESP_LOGI(TAG, "MMA8452Q initialized successfully");
     return true;
@@ -114,34 +151,35 @@ void MMA8452Q::OnShake(std::function<void()> callback) {
     shake_callback_ = callback;
 }
 
-void MMA8452Q::Update() {
-    if (interrupt_triggered_) {
-        ProcessInterrupt();
-        interrupt_triggered_ = false;
+
+void IRAM_ATTR MMA8452Q::HandleInterrupt(void* arg) {
+    MMA8452Q* sensor = static_cast<MMA8452Q*>(arg);
+    
+    // 如果使用队列，则发送事件
+    if (sensor->gpio_evt_queue) {
+        uint8_t gpio = sensor->int1_pin_;
+        xQueueSendFromISR(sensor->gpio_evt_queue, &gpio, NULL);
     }
 }
 
-void IRAM_ATTR MMA8452Q::HandleInterrupt(void* arg) {
-    // 在中断上下文中，只设置标志位，不执行复杂操作
-    MMA8452Q* sensor = static_cast<MMA8452Q*>(arg);
-    sensor->interrupt_triggered_ = true;
-}
+
 
 void MMA8452Q::ProcessInterrupt() {
     // 读取中断源寄存器以确定中断类型
     uint8_t int_source = ReadReg(REG_INT_SOURCE);
-    
+    ESP_LOGI(TAG, "Interrupt detected!");
     // 检查是否为运动检测中断
     if (int_source & INT_SRC_FF_MT) {
         ESP_LOGI(TAG, "Motion detected!");
-        
+        // 读取自由落体/运动检测源寄存器
+        uint8_t ff_mt_src = ReadReg(REG_OUT_FF_MT_SRC);
+        ESP_LOGI(TAG, "Freefall/Motion Source: 0x%02x", ff_mt_src);
         // 如果设置了回调函数，则调用它
         if (shake_callback_) {
             shake_callback_();
         }
     }
     
-    // 清除中断标志 - 读取INT_SOURCE寄存器已经清除了中断标志
 }
 
 void MMA8452Q::UpdateTask(void* arg) {
@@ -161,10 +199,30 @@ void MMA8452Q::UpdateTask(void* arg) {
          // 打印三轴加速度值
          ESP_LOGI(TAG, "Acceleration: X=%.2fg, Y=%.2fg, Z=%.2fg", x_g, y_g, z_g);
          
-        // 调用Update方法处理中断
-        sensor->Update();
+
         
         // 短暂延时，避免占用过多CPU资源
-        vTaskDelay(pdMS_TO_TICKS(1000));
+        vTaskDelay(pdMS_TO_TICKS(150));
+    }
+}
+
+void MMA8452Q::user_task_interrupt(void* arg) {
+    // 正确获取 sensor 指针
+    MMA8452Q* sensor = static_cast<MMA8452Q*>(arg);
+    uint8_t gpio_num;
+    
+    // 确保 sensor 不为 NULL 且 gpio_evt_queue 已初始化
+    if (sensor && sensor->gpio_evt_queue) {
+        while (true) {
+            if (xQueueReceive(sensor->gpio_evt_queue, &gpio_num, portMAX_DELAY) == pdPASS) {
+                sensor->ProcessInterrupt();
+            }
+            // 短暂延时，避免占用过多CPU资源
+            vTaskDelay(pdMS_TO_TICKS(100));
+        }
+    } else {
+        // 如果 sensor 为 NULL 或队列未初始化，记录错误并删除任务
+        ESP_LOGE(TAG, "Invalid sensor pointer or queue in interrupt task");
+        vTaskDelete(NULL);
     }
 }

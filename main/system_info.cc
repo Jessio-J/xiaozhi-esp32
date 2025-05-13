@@ -41,6 +41,33 @@ std::string SystemInfo::GetChipModelName() {
     return std::string(CONFIG_IDF_TARGET);
 }
 
+std::string SystemInfo::GetDeviceConfigId() {
+#ifdef CONFIG_DEVICE_CONFIG_1
+    return std::string("1");
+#elif CONFIG_DEVICE_CONFIG_2
+    return std::string("2");
+#elif CONFIG_DEVICE_CONFIG_3
+    return std::string("3");
+#elif CONFIG_DEVICE_CONFIG_4
+    return std::string("4");
+#elif CONFIG_DEVICE_CONFIG_5
+    return std::string("5");
+#elif CONFIG_DEVICE_CONFIG_6
+    return std::string("6");
+#elif CONFIG_DEVICE_CONFIG_7
+    return std::string("7");
+#elif CONFIG_DEVICE_CONFIG_8
+    return std::string("8");
+#elif CONFIG_DEVICE_CONFIG_9
+    return std::string("9");
+#elif CONFIG_DEVICE_CONFIG_10
+    return std::string("10");
+#else
+    return std::string("1");
+#endif
+}
+
+
 esp_err_t SystemInfo::PrintRealTimeStats(TickType_t xTicksToWait) {
     #define ARRAY_SIZE_OFFSET 5
     TaskStatus_t *start_array = NULL, *end_array = NULL;

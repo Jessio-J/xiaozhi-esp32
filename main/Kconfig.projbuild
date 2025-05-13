@@ -2,7 +2,7 @@ menu "Tongtu Ai Box"
 
 config OTA_VERSION_URL
     string "OTA Version URL"
-    default "https://api.tenclass.net/xiaozhi/ota/"
+    default "https://aiapi.melontalk.com.cn/api/hardwareVersion/ota/"
     help
         The application will access this URL to check for updates.
 
@@ -60,6 +60,33 @@ choice DEVICE_ROLE
         bool "英语老师"
     config DEVICE_ROLE_STORYTELLER
         bool "童话故事大王"
+endchoice
+
+choice DEVICE_CONFIG_ID
+    prompt "Device Config ID"
+    default DEVICE_CONFIG_1
+    help
+        设备配置id
+    config DEVICE_CONFIG_1
+        bool "1"
+    config DEVICE_CONFIG_2
+        bool "2"
+    config DEVICE_CONFIG_3
+        bool "3"
+    config DEVICE_CONFIG_4
+        bool "4"
+    config DEVICE_CONFIG_5
+        bool "5"
+    config DEVICE_CONFIG_6
+        bool "6"
+    config DEVICE_CONFIG_7
+        bool "7"
+    config DEVICE_CONFIG_8
+        bool "8"
+    config DEVICE_CONFIG_9
+        bool "9"
+    config DEVICE_CONFIG_10
+        bool "10"
 endchoice
 
 

@@ -65,12 +65,13 @@ bool Ota::CheckVersion() {
     // Parse the JSON response and check if the version is newer
     // If it is, set has_new_version_ to true and store the new version and URL
     
-    cJSON *root = cJSON_Parse(response.c_str());
+    cJSON *rootResponse = cJSON_Parse(response.c_str());
+    // cJSON *root = cJSON_Parse(response.c_str());
+    cJSON *root = cJSON_GetObjectItem(rootResponse, "data");
     if (root == NULL) {
         ESP_LOGE(TAG, "Failed to parse JSON response");
         return false;
     }
-
     has_activation_code_ = false;
     cJSON *activation = cJSON_GetObjectItem(root, "activation");
     if (activation != NULL) {
@@ -148,8 +149,7 @@ bool Ota::CheckVersion() {
 
     // Check if the version is newer, for example, 0.1.0 is newer than 0.0.1
     has_new_version_ = IsNewVersionAvailable(current_version_, firmware_version_);
-    // 暂时不考虑升级的事情
-    has_new_version_ = false;
+
     if (has_new_version_) {
         ESP_LOGI(TAG, "New version available: %s", firmware_version_.c_str());
     } else {
@@ -283,7 +283,6 @@ void Ota::Upgrade(const std::string& firmware_url) {
         ESP_LOGE(TAG, "Failed to set boot partition: %s", esp_err_to_name(err));
         return;
     }
-
     ESP_LOGI(TAG, "Firmware upgrade successful, rebooting in 3 seconds...");
     vTaskDelay(pdMS_TO_TICKS(3000));
     esp_restart();

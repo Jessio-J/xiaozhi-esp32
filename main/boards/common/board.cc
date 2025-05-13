@@ -103,6 +103,7 @@ std::string Board::GetJson() {
     json += "\"language\":\"" + std::string(Lang::CODE) + "\",";
     json += "\"flash_size\":" + std::to_string(SystemInfo::GetFlashSize()) + ",";
     json += "\"minimum_free_heap_size\":" + std::to_string(SystemInfo::GetMinimumFreeHeapSize()) + ",";
+    json += "\"deviceConfigId\":" + SystemInfo::GetDeviceConfigId() + ",";
     json += "\"mac_address\":\"" + SystemInfo::GetMacAddress() + "\",";
     json += "\"uuid\":\"" + uuid_ + "\",";
     json += "\"chip_model_name\":\"" + SystemInfo::GetChipModelName() + "\",";

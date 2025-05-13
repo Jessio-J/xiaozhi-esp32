@@ -72,6 +72,7 @@ bool WebsocketProtocol::OpenAudioChannel() {
     websocket_->SetHeader("Device-Id", SystemInfo::GetMacAddress().c_str());
     websocket_->SetHeader("Client-Id", Board::GetInstance().GetUuid().c_str());
     websocket_->SetHeader("Device-Role", GetDeviceRoleName());
+    websocket_->SetHeader("device-config-id", GetDeviceRoleName());
     websocket_->OnData([this](const char* data, size_t len, bool binary) {
         if (binary) {
             if (on_incoming_audio_ != nullptr) {

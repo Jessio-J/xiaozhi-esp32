@@ -8,7 +8,8 @@
 #include "iot/thing_manager.h"
 #include "led/single_led.h"
 #include "assets/lang_config.h"
-
+#include "sensors/mma8452q.h"       
+#include <memory>           
 #include <wifi_station.h>
 #include <esp_log.h>
 #include <driver/i2c_master.h>
@@ -26,7 +27,7 @@ LV_FONT_DECLARE(font_awesome_14_1);
 
 class CompactWifiBoard : public WifiBoard {
 private:
-    i2c_master_bus_handle_t display_i2c_bus_;
+    i2c_master_bus_handle_t i2c_bus_display;
     esp_lcd_panel_io_handle_t panel_io_ = nullptr;
     esp_lcd_panel_handle_t panel_ = nullptr;
     Display* display_ = nullptr;
@@ -34,10 +35,11 @@ private:
     Button touch_button_;
     Button volume_up_button_;
     Button volume_down_button_;
+    std::unique_ptr<MMA8452Q> accelerometer_;  // 新增加速度传感器
 
-    void InitializeDisplayI2c() {
+    void InitializeI2c() {
         i2c_master_bus_config_t bus_config = {
-            .i2c_port = (i2c_port_t)0,
+            .i2c_port = I2C_NUM_1,
             .sda_io_num = DISPLAY_SDA_PIN,
             .scl_io_num = DISPLAY_SCL_PIN,
             .clk_source = I2C_CLK_SRC_DEFAULT,
@@ -48,7 +50,10 @@ private:
                 .enable_internal_pullup = 1,
             },
         };
-        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &display_i2c_bus_));
+        
+        ESP_ERROR_CHECK(i2c_new_master_bus(&bus_config, &i2c_bus_display));
+
+
     }
 
     void InitializeSsd1306Display() {
@@ -68,7 +73,7 @@ private:
             .scl_speed_hz = 400 * 1000,
         };
 
-        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c_v2(display_i2c_bus_, &io_config, &panel_io_));
+        ESP_ERROR_CHECK(esp_lcd_new_panel_io_i2c_v2(i2c_bus_display, &io_config, &panel_io_));
 
         ESP_LOGI(TAG, "Install SSD1306 driver");
         esp_lcd_panel_dev_config_t panel_config = {};
@@ -148,6 +153,19 @@ private:
             GetDisplay()->ShowNotification(Lang::Strings::MUTED);
         });
     }
+    void InitializeAccelerometer() {
+        accelerometer_ = std::make_unique<MMA8452Q>(i2c_bus_display, ACC_GPIO_INT1);
+        if (!accelerometer_->Initialize()) {
+            ESP_LOGE(TAG, "Failed to initialize accelerometer");
+            return;
+        }
+        
+        accelerometer_->OnShake([]() {
+            auto& app = Application::GetInstance();
+            std::string wake_word="喵喵同学";
+            app.WakeWordInvoke(wake_word);  // 使用现有的唤醒词机制来处理摇一摇
+        });
+    }
 
     // 物联网初始化，添加对 AI 可见设备
     void InitializeIot() {
@@ -162,9 +180,10 @@ public:
         touch_button_(TOUCH_BUTTON_GPIO),
         volume_up_button_(VOLUME_UP_BUTTON_GPIO),
         volume_down_button_(VOLUME_DOWN_BUTTON_GPIO) {
-        InitializeDisplayI2c();
+        InitializeI2c();
         InitializeSsd1306Display();
         InitializeButtons();
+        InitializeAccelerometer();  
         InitializeIot();
     }
 
