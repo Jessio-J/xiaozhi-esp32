@@ -10,21 +10,18 @@
 #include <wifi_station.h>
 #include <esp_log.h>
 #include <driver/i2c_master.h>
-
+#include "sensors/mma8452q.h"
 #include "driver/gpio.h"
 
 
 #define TAG "MelontalkMagicBox"
-
-LV_FONT_DECLARE(font_puhui_20_4);
-LV_FONT_DECLARE(font_awesome_20_4);
-
 
 class MelontalkMagicBox : public WifiBoard {
 private:
     i2c_master_bus_handle_t codec_i2c_bus_;
     Button boot_button_;
     Display* display_;
+    std::unique_ptr<MMA8452Q> accelerometer_;
 
     void InitializeCodecI2c() {
         // Initialize I2C peripheral
@@ -51,6 +48,19 @@ private:
             app.ToggleChatState();
         });
     }
+    void InitializeAccelerometer() {
+        accelerometer_ = std::make_unique<MMA8452Q>(codec_i2c_bus_, ACC_GPIO_INT1);
+        if (!accelerometer_->Initialize()) {
+            ESP_LOGE(TAG, "Failed to initialize accelerometer");
+            return;
+        }
+
+        accelerometer_->OnShake([]() {
+            auto& app = Application::GetInstance();
+            std::string wake_word="喵喵同学";
+            app.WakeWordInvoke(wake_word);  // 使用现有的唤醒词机制来处理摇一摇
+        });
+    }
     void InitializeDisplay() {
         display_ = new NoDisplay();
     }
@@ -59,31 +69,27 @@ private:
     void InitializeIot() {
         auto& thing_manager = iot::ThingManager::GetInstance();
         thing_manager.AddThing(iot::CreateThing("Speaker")); 
-        // thing_manager.AddThing(iot::CreateThing("Backlight"));   
     }
 
 public:
     MelontalkMagicBox() : boot_button_(BOOT_BUTTON_GPIO) {  
         InitializeCodecI2c();
         InitializeDisplay();
+        InitializeAccelerometer();
         InitializeButtons();
         InitializeIot();
-        GetBacklight()->RestoreBrightness();
+       
     }
 
     virtual Led* GetLed() override {
-        static SingleLed led_strip(BUILTIN_LED_GPIO);
-        return &led_strip;
+        static SingleLed led(BUILTIN_LED_GPIO);
+        return &led;
     }
 
     virtual Display* GetDisplay() override {
         return display_;
     }
     
-    virtual Backlight* GetBacklight() override {
-        static PwmBacklight backlight(DISPLAY_BACKLIGHT_PIN, DISPLAY_BACKLIGHT_OUTPUT_INVERT);
-        return &backlight;
-    }
 
     virtual AudioCodec* GetAudioCodec() override {
         static Es8311AudioCodec audio_codec(codec_i2c_bus_, I2C_NUM_0, AUDIO_INPUT_SAMPLE_RATE, AUDIO_OUTPUT_SAMPLE_RATE,

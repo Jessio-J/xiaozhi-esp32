@@ -87,6 +87,26 @@ choice DEVICE_CONFIG_ID
         bool "9"
     config DEVICE_CONFIG_10
         bool "10"
+    config DEVICE_CONFIG_11
+        bool "11"
+    config DEVICE_CONFIG_12
+        bool "12"
+    config DEVICE_CONFIG_13
+        bool "13"
+    config DEVICE_CONFIG_14
+        bool "14"
+    config DEVICE_CONFIG_15
+        bool "15"
+    config DEVICE_CONFIG_16
+        bool "16"
+    config DEVICE_CONFIG_17
+        bool "17"
+    config DEVICE_CONFIG_18
+        bool "18"
+    config DEVICE_CONFIG_19
+        bool "19"
+    config DEVICE_CONFIG_20
+        bool "20"
 endchoice
 
 

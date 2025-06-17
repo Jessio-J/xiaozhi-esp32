@@ -62,6 +62,26 @@ std::string SystemInfo::GetDeviceConfigId() {
     return std::string("9");
 #elif CONFIG_DEVICE_CONFIG_10
     return std::string("10");
+#elif CONFIG_DEVICE_CONFIG_11
+    return std::string("11");
+#elif CONFIG_DEVICE_CONFIG_12
+    return std::string("12");
+#elif CONFIG_DEVICE_CONFIG_13
+    return std::string("13");
+#elif CONFIG_DEVICE_CONFIG_14
+    return std::string("14");
+#elif CONFIG_DEVICE_CONFIG_15
+    return std::string("15");
+#elif CONFIG_DEVICE_CONFIG_16
+    return std::string("16");
+#elif CONFIG_DEVICE_CONFIG_17
+    return std::string("17");
+#elif CONFIG_DEVICE_CONFIG_18
+    return std::string("18");
+#elif CONFIG_DEVICE_CONFIG_19
+    return std::string("19");
+#elif CONFIG_DEVICE_CONFIG_20
+    return std::string("20");
 #else
     return std::string("1");
 #endif

@@ -111,9 +111,9 @@ bool MMA8452Q::Initialize() {
     //     uint8_t THS   :7; // FF_MT_CFG<6:0> Freefall/motion threshold
     //     uint8_t DBCNTM:1; // FF_MT_CFG<7>   Debounce counter mode selection
     // };
-    WriteReg(MMA845X_REG_FF_MT_THS, 0x10);
+    WriteReg(MMA845X_REG_FF_MT_THS, 0x14);
     // event_config.debounce_cnt = 5; // 100 ms at ODR=50Hz in normal oversampling mode
-    WriteReg(MMA845X_REG_FF_MT_COUNT, 0x05);
+    WriteReg(MMA845X_REG_FF_MT_COUNT, 0x08);
     // struct mma845x_reg_ctrl3
     // {
     //     uint8_t PP_OD      :1; // CTRL3<0>   Push-pull/open drain interrupt pad
@@ -135,7 +135,7 @@ bool MMA8452Q::Initialize() {
     WriteReg(REG_CTRL_REG2, 0x10);  // 启用高通滤波用于运动检测
     
     // 配置控制寄存器1 - 设置数据速率和激活传感器
-    WriteReg(REG_CTRL_REG1, 0x01 | (0x03 << 3));  // 激活传感器，ODR=800Hz，低噪声模式关闭
+    WriteReg(REG_CTRL_REG1, 0x01 | (0x04 << 3));  // 激活传感器，ODR=100Hz，低噪声模式关闭
     
    
     // 创建更新任务
