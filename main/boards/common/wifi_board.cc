@@ -16,12 +16,11 @@
 #include <tls_transport.h>
 #include <web_socket.h>
 #include <esp_log.h>
-
+#include <wifi_configuration_ap.h>
 #include <wifi_station.h>
 
 #include <ssid_manager.h>
-#include <esp_netif.h>
-#include "smartconfig.h"
+
 #include <esp_wifi.h>
 static const char *TAG = "WifiBoard";
 
@@ -42,22 +41,19 @@ void WifiBoard::EnterWifiConfigMode() {
     ESP_LOGI(TAG, "NOW ENTER WIFI CONFIG MODE!!!!");
     auto& application = Application::GetInstance();
     application.SetDeviceState(kDeviceStateWifiConfiguring);
+
+    auto& wifi_ap = WifiConfigurationAp::GetInstance();
+    wifi_ap.SetLanguage(Lang::CODE);
+    wifi_ap.SetSsidPrefix("Xiaotu");
+    wifi_ap.Start();
+
     // 显示 WiFi 配置 AP 的 SSID 和 Web 服务器 URL
-    std::string hint = Lang::Strings::ENTERING_WIFI_CONFIG_MODE;
-    auto& smart_config = SmartConfig::GetInstance();
-    smart_config.OnConnected([this]() {
-        // auto display = Board::GetInstance().GetDisplay();
-        // display->SetStatus(Lang::Strings::CONNECTED_TO);
-        // auto& application = Application::GetInstance();
-        // application.Alert(Lang::Strings::WIFI_CONFIG_MODE, Lang::Strings::CONNECTED_TO.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
-    });
-    smart_config.OnConfigDone([this]() {
-        auto display = Board::GetInstance().GetDisplay();
-        display->SetStatus(Lang::Strings::CONNECTED_TO);
-        vTaskDelay(pdMS_TO_TICKS(2000));
-        esp_restart();
-    });
-    smart_config.Start();
+    std::string hint = Lang::Strings::CONNECT_TO_HOTSPOT;
+    hint += wifi_ap.GetSsid();
+    hint += Lang::Strings::ACCESS_VIA_BROWSER;
+    hint += wifi_ap.GetWebServerUrl();
+    hint += "\n\n";
+   
     
     // 播报配置 WiFi 的提示
     application.Alert(Lang::Strings::WIFI_CONFIG_MODE, hint.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
@@ -73,8 +69,6 @@ void WifiBoard::EnterWifiConfigMode() {
 
 void WifiBoard::StartNetwork() {
     // User can press BOOT button while starting to enter WiFi configuration mode
-    // Initialize the TCP/IP stack
-    ESP_ERROR_CHECK(esp_netif_init());
     // 创建默认WiFi站点网络接口
     esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
     assert(sta_netif);

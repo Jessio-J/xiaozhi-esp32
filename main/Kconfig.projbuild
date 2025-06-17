@@ -2,14 +2,14 @@ menu "Tongtu Ai Box"
 
 config OTA_VERSION_URL
     string "OTA Version URL"
-    default "https://aiapi.melontalk.com.cn/api/hardwareVersion/ota/"
+    default "https://api.samewayai.com/api/hardwareVersion/ota/"
     help
         The application will access this URL to check for updates.
 
 
 choice
     prompt "语言选择"
-    default LANGUAGE_ZH_CN
+    default LANGUAGE_EN_US
     help
         Select device display language
 

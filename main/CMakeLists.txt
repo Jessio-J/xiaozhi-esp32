@@ -18,13 +18,10 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "settings.cc"
             "background_task.cc"
             "main.cc"
-            "wifi/ssid_manager.cc"
-            "wifi/smartconfig.cc"
-            "wifi/wifi_station.cc"
             "sensors/mma8452q.cc"
             )
 
-set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing" "wifi" "sensors")
+set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing" "sensors")
 
 # 添加 IOT 相关文件
 file(GLOB IOT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/iot/things/*.cc)
