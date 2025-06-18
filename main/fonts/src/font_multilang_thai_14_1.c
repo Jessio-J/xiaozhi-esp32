@@ -12,6 +12,9 @@ LV_FONT_DECLARE(font_multilang_chinese_portuguese);
 #include "lvgl.h"
 #endif
 
+/* Declare fallback font */
+LV_FONT_DECLARE(font_multilang_arabic_14_1);
+
 #ifndef FONT_MULTILANG_THAI_14_1
 #define FONT_MULTILANG_THAI_14_1 1
 #endif
@@ -941,7 +944,7 @@ lv_font_t font_multilang_thai_14_1 = {
 #endif
     .dsc = &font_dsc,          /*The custom font data. Will be accessed by `get_glyph_bitmap/dsc` */
 #if LV_VERSION_CHECK(8, 2, 0) || LVGL_VERSION_MAJOR >= 9
-    .fallback = NULL,
+    .fallback = &font_multilang_arabic_14_1,
 #endif
     .user_data = NULL,
 };

@@ -16,12 +16,11 @@
 #include <tls_transport.h>
 #include <web_socket.h>
 #include <esp_log.h>
-#include <wifi_configuration_ap.h>
-#include <wifi_station.h>
 
+#include <wifi_station.h>
+#include <wifi_configuration_ap.h>
 #include <ssid_manager.h>
 
-#include <esp_wifi.h>
 static const char *TAG = "WifiBoard";
 
 WifiBoard::WifiBoard() {
@@ -38,7 +37,6 @@ std::string WifiBoard::GetBoardType() {
 }
 
 void WifiBoard::EnterWifiConfigMode() {
-    ESP_LOGI(TAG, "NOW ENTER WIFI CONFIG MODE!!!!");
     auto& application = Application::GetInstance();
     application.SetDeviceState(kDeviceStateWifiConfiguring);
 
@@ -53,7 +51,6 @@ void WifiBoard::EnterWifiConfigMode() {
     hint += Lang::Strings::ACCESS_VIA_BROWSER;
     hint += wifi_ap.GetWebServerUrl();
     hint += "\n\n";
-   
     
     // 播报配置 WiFi 的提示
     application.Alert(Lang::Strings::WIFI_CONFIG_MODE, hint.c_str(), "", Lang::Sounds::P3_WIFICONFIG);
@@ -69,9 +66,6 @@ void WifiBoard::EnterWifiConfigMode() {
 
 void WifiBoard::StartNetwork() {
     // User can press BOOT button while starting to enter WiFi configuration mode
-    // 创建默认WiFi站点网络接口
-    esp_netif_t *sta_netif = esp_netif_create_default_wifi_sta();
-    assert(sta_netif);
     if (wifi_config_mode_) {
         EnterWifiConfigMode();
         return;
