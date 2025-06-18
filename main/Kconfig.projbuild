@@ -219,6 +219,8 @@ choice BOARD_TYPE
         bool "无名科技星智1.54(ML307)"
     config BOARD_TYPE_SENSECAP_WATCHER
         bool "SenseCAP Watcher"
+    config BOARD_TYPE_AIKODER_S3_LCD
+        bool "AIKODER ESP32-S3 LCD"
 endchoice
 
 choice DISPLAY_OLED_TYPE

@@ -21,7 +21,7 @@ set(SOURCES "audio_codecs/audio_codec.cc"
             "sensors/mma8452q.cc"
             )
 
-set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing" "sensors")
+set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing" "sensors" "fonts")
 
 # 添加 IOT 相关文件
 file(GLOB IOT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/iot/things/*.cc)
@@ -137,6 +137,8 @@ elseif(CONFIG_BOARD_TYPE_SENSECAP_WATCHER)
     set(BOARD_TYPE "sensecap-watcher")
 elseif(CONFIG_BOARD_TYPE_ESP32_CGC)
     set(BOARD_TYPE "esp32-cgc")
+elseif(CONFIG_BOARD_TYPE_AIKODER_S3_LCD)
+    set(BOARD_TYPE "aikoder-s3-lcd")
 endif()
 file(GLOB BOARD_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/boards/${BOARD_TYPE}/*.cc
