@@ -23,6 +23,10 @@ set(SOURCES "audio_codecs/audio_codec.cc"
 
 set(INCLUDE_DIRS "." "display" "audio_codecs" "protocols" "audio_processing" "sensors" "fonts")
 
+# 添加字体文件
+file(GLOB FONT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/fonts/*.c ${CMAKE_CURRENT_SOURCE_DIR}/fonts/src/*.c)
+list(APPEND SOURCES ${FONT_SOURCES})
+
 # 添加 IOT 相关文件
 file(GLOB IOT_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/iot/things/*.cc)
 list(APPEND SOURCES ${IOT_SOURCES})

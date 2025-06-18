@@ -9,6 +9,7 @@
 #include "config.h"
 #include "power_save_timer.h"
 #include "font_awesome_symbols.h"
+#include "font_multilang_14_1.h"
 
 #include <wifi_station.h>
 #include <esp_log.h>
@@ -16,10 +17,9 @@
 #include <driver/i2c_master.h>
 #include <esp_lcd_panel_ops.h>
 #include <esp_lcd_panel_vendor.h>
-
 #define TAG "XminiC3Board"
 
-LV_FONT_DECLARE(font_puhui_14_1);
+
 LV_FONT_DECLARE(font_awesome_14_1);
 
 class XminiC3Board : public WifiBoard {
@@ -114,9 +114,11 @@ private:
         // Set the display to on
         ESP_LOGI(TAG, "Turning display on");
         ESP_ERROR_CHECK(esp_lcd_panel_disp_on_off(panel_, true));
-
+        
+        // 使用预配置好fallback链的多语言字体
+        // 字体链：中文+葡萄牙语 -> 泰语 -> 阿拉伯语
         display_ = new OledDisplay(panel_io_, panel_, DISPLAY_WIDTH, DISPLAY_HEIGHT, DISPLAY_MIRROR_X, DISPLAY_MIRROR_Y,
-            {&font_puhui_14_1, &font_awesome_14_1});
+            {&FONT_MULTILANG_14_1, &font_awesome_14_1});
     }
 
     void InitializeButtons() {
